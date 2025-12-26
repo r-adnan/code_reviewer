@@ -10,4 +10,5 @@ if __name__ == "__main__":
     tree = analyzer.create_tree(file_path)
     analyzer.visit(tree)
 
+    # test push 2
     print(analyzer.issues)
