@@ -1,11 +1,10 @@
 import ast
 
 class CodeAnalyzer(ast.NodeVisitor):
-    """Analyze ASTs and collect style/complexity issues.
+    # Analyze the ASTs and collect style/complexity issues
 
-    The analyzer is modular: each check is implemented in its own method so
-    the checks are easy to unit-test and reuse.
-    """
+    # The analyzer is modular - each check is implemented in its own method so
+    # the checks are easy to unit-test and reuse
 
     def __init__(self, *, max_function_length=50, max_args=5, max_nested_blocks=4, min_var_name_len=2):
         self.issues = []
@@ -19,7 +18,6 @@ class CodeAnalyzer(ast.NodeVisitor):
 
     # Create an AST from a file and store it on the instance
     def create_tree(self, file_path):
-        """Parse a file and store the AST on the instance. Returns the AST."""
         with open(file_path, "r") as f:
             source = f.read()
         self.tree = ast.parse(source)
@@ -42,8 +40,8 @@ class CodeAnalyzer(ast.NodeVisitor):
         print(ast.dump(tree, include_attributes=False, indent=2))
 
     # --- Visitors -----------------------------------------------------------------
+    # Run all function-related checks and continue traversal
     def visit_FunctionDef(self, node):
-        """Run all function-related checks and continue traversal."""
         self.check_function_length(node)
         self.check_too_many_args(node)
         self.check_nested_blocks(node)
@@ -80,8 +78,8 @@ class CodeAnalyzer(ast.NodeVisitor):
                 f"Function '{node.name}' has too many arguments ({argc}, limit: {self.max_args})"
             )
 
+    # Compute max nesting depth of control flow statements within the function
     def check_nested_blocks(self, node: ast.FunctionDef):
-        """Compute max nesting depth of control flow statements within the function."""
         def depth_of_nodes(nodes, depth=0):
             maxd = depth
             for n in nodes:
