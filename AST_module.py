@@ -23,22 +23,6 @@ class CodeAnalyzer(ast.NodeVisitor):
         self.tree = ast.parse(source)
         return self.tree
 
-    # Print a concise summary of the AST root node and its attributes
-    def print_ast(self, tree):
-        print("analyze_file: AST root type:", type(tree).__name__)
-        if hasattr(tree, "_fields"):
-            print("analyze_file: _fields =", tree._fields)
-            for field in tree._fields:
-                value = getattr(tree, field, None)
-                if isinstance(value, list):
-                    print(f"  - {field}: list(len={len(value)})")
-                else:
-                    print(f"  - {field}: {type(value).__name__}")
-
-        # Print a readable dump of the AST structure
-        print("analyze_file: ast.dump(tree, include_attributes=False):")
-        print(ast.dump(tree, include_attributes=False, indent=2))
-
     # --- Visitors -----------------------------------------------------------------
     # Run all function-related checks and continue traversal
     def visit_FunctionDef(self, node):
@@ -49,7 +33,14 @@ class CodeAnalyzer(ast.NodeVisitor):
 
     def visit_Assign(self, node):
         self.check_variable_names(node)
+        self.check_unused_variables(node)
         self.generic_visit(node)
+    
+    # def visit_Performance(self, node):
+    #     self.repeated_calculations(node)
+    #     self.inefficient_loops(node)
+    #     self.string_concatenation(node)
+    #     self.generic_visit(node)
 
     def visit_ImportFrom(self, node):
         # flag wildcard imports (from module import *)
@@ -117,10 +108,57 @@ class CodeAnalyzer(ast.NodeVisitor):
                         if len(name) < self.min_var_name_len and name not in self.acceptable_short_names:
                             self.issues.append(f"Short variable name '{name}' at line {node.lineno}")
 
+    def check_unused_variables(self, node: ast.Assign):
+        # Simple analysis: collect names assigned in the targets and names used in the value (RHS).
+        # This flags assignments where the assigned names do not appear in the RHS expression.
+        assigned_vars = set()
+        used_vars = set()
+
+        # collect assigned names (handle Name, Tuple, List)
+        def collect_targets(t):
+            if isinstance(t, ast.Name):
+                assigned_vars.add(t.id)
+            elif isinstance(t, (ast.Tuple, ast.List)):
+                for elt in t.elts:
+                    collect_targets(elt)
+            # other target types (Attribute, Subscript) are ignored for now
+
+        for target in node.targets:
+            collect_targets(target)
+
+        # collect names used in the RHS expression
+        for n in ast.walk(node.value):
+            if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load):
+                used_vars.add(n.id)
+
+        # ignore common "throwaway" names like '_'
+        unused = {name for name in assigned_vars if name not in used_vars and name not in self.acceptable_short_names}
+
+        if unused:
+            self.issues.append(f"Unused variable(s) {', '.join(sorted(unused))} at line {node.lineno}")
+
+
     # Utility
     def get_issues(self):
         return list(self.issues)
 
     def clear_issues(self):
         self.issues.clear()
+
+    # Print a concise summary of the AST root node and its attributes
+    def print_ast(self, tree):
+        print("analyze_file: AST root type:", type(tree).__name__)
+        if hasattr(tree, "_fields"):
+            print("analyze_file: _fields =", tree._fields)
+            for field in tree._fields:
+                value = getattr(tree, field, None)
+                if isinstance(value, list):
+                    print(f"  - {field}: list(len={len(value)})")
+                else:
+                    print(f"  - {field}: {type(value).__name__}")
+
+        # Print a readable dump of the AST structure
+        print("analyze_file: ast.dump(tree, include_attributes=False):")
+        print(ast.dump(tree, include_attributes=False, indent=2))
+
 

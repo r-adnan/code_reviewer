@@ -58,10 +58,38 @@ def test_wildcard_import():
     assert any("Wildcard import" in msg for msg in issues)
 
 
+def test_unused_variable_simple():
+    analyzer = CodeAnalyzer()
+    issues = run_test("a = 1\n", analyzer)
+    assert any("Unused variable" in msg for msg in issues)
+
+
+def test_assigned_not_in_rhs():
+    analyzer = CodeAnalyzer()
+    issues = run_test("a = b\n", analyzer)
+    assert any("Unused variable" in msg for msg in issues)
+
+
+def test_unused_variable_used_in_rhs():
+    analyzer = CodeAnalyzer()
+    issues = run_test("a = a + 1\n", analyzer)
+    assert not any("Unused variable" in msg for msg in issues)
+
+
+def test_underscore_ignored():
+    analyzer = CodeAnalyzer()
+    issues = run_test("_ = 1\n", analyzer)
+    assert not any("Unused variable" in msg for msg in issues)
+
+
 if __name__ == '__main__':
     test_function_length()
     test_too_many_args()
     test_nested_blocks()
     test_short_variable_name()
     test_wildcard_import()
+    test_unused_variable_simple()
+    test_assigned_not_in_rhs()
+    test_unused_variable_used_in_rhs()
+    test_underscore_ignored()
     print('All analyzer tests passed')

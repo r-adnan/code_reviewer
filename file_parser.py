@@ -2,7 +2,7 @@ import AST_module as am
 
 if __name__ == "__main__":
 
-    file_path = "test/test_code.py"
+    file_path = "tests/test_code.py"
 
     # Create an instance of the CodeAnalyzer class
     analyzer = am.CodeAnalyzer()
@@ -10,5 +10,5 @@ if __name__ == "__main__":
     tree = analyzer.create_tree(file_path)
     analyzer.visit(tree)
 
-    # test push 2
-    print(analyzer.issues)
+    for iss in analyzer.issues:
+        print(iss)

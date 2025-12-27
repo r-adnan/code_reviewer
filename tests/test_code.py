@@ -13,6 +13,11 @@ def decrypt_caesar(s):
 # Intentionally problematic examples for CodeAnalyzer
 from math import *  # wildcard import should be flagged by the analyzer
 
+def unused_variable():
+    i = 3
+    j = 6
+    k = 5
+    return j + k
 
 def too_many_args(a, b, c, d, e, f, g):
     """Function with too many arguments (should be flagged)."""
